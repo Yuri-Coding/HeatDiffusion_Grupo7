@@ -4,3 +4,6 @@
 - João Pedro Madureira Sales
 - Matheus Victor Martins
 - Yuri Silvestre Admertides
+## Dependências
+- Python 3.11.9 +
+## Referências
