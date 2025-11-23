@@ -68,7 +68,7 @@ O master envia uma mensagem `stop` no final; os workers encerram sozinhos.
 Observacao: para simplicidade, o master envia o bloco completo de cada worker a cada iteracao (protocolo didatico, com overhead de comunicacao maior).
 
 ### Benchmark padrao
-Executa tamanhos 50x50, 100x100 e 200x200 com 100 iteracoes, threads 1/2/4 e workers 1/2. Gera `results.csv`.
+Executa tamanhos 50x50, 100x100 e 200x200 com 100 iteracoes, threads 1/2/4 e workers 1/2/4. Gera `results.csv`.
 ```bash
 python benchmark.py --hot
 ```
@@ -93,9 +93,3 @@ Gera:
 3) Rodar o benchmark completo: `python benchmark.py --hot` (gera `results.csv`).
 4) Gerar graficos: `python plot_results.py --input results.csv --out-dir .`.
 5) Preencher `analysis.md` com metodologia, resultados e conclusoes.
-
-### Pronto para enviar ao professor
-- Entregar `results.csv`, `tempo_vs_tamanho.png`, `tempo_vs_threads.png`, `tempo_vs_workers.png`.
-- Confirmar que o README (este arquivo) traz specs da maquina e dados da equipe.
-- Deixar `analysis.md` preenchido com discussoes sobre escalabilidade, speedup e limites.
-- Opcional: anexar comandos usados e tempos obtidos para facilitar reproducao.
