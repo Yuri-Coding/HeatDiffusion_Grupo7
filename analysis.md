@@ -2,7 +2,7 @@
 - Experimentos: grades 50x50, 100x100, 200x200, 400x400 e 800x800 com 100 iteracoes Jacobi; bordas fixas; regiao quente desativada. Dataset extra: 400x400 e 800x800 tambem com 200 iteracoes.
 - Abordagens: sequencial; threads com 1, 2 e 4 trabalhadores (ThreadPoolExecutor, divisao por faixas de linha); distribuida via sockets com 1, 2 e 4 workers (master repassa bloco completo + linhas fantasmas a cada iteracao).
 - Medicao de tempo: `time.perf_counter` medindo apenas a simulacao; sem descarte de aquecimento.
-- Hardware/OS/Python: nao informado (preencher CPU, RAM, SO, versao Python) para contextualizar os tempos.
+- Hardware/OS/Python: Intel Core i7 13a geracao, 16 GB RAM, NVIDIA RTX 4050, Windows 11, Python 3.10.11.
 - Dados fonte: `results.csv` (iteracao 100) e `results_iter200.csv` (iteracao 200 nos tamanhos grandes) gerados via `benchmark.py`; graficos em `tempo_vs_tamanho.png`, `tempo_vs_threads.png`, `tempo_vs_workers.png` e `iter200/*.png` produzidos por `plot_results.py`.
 
 ## Resultados
@@ -76,7 +76,7 @@ Speedup vs sequencial (S = Tseq / T):
 - Escalabilidade: para 50-200 o overhead domina; a partir de 400 pontos por lado as threads passam a trazer ganho (ate ~1.9x em 800x800x100). O distribuido segue atrasado mesmo com 4 workers.
 - Efeito das iteracoes: dobrar as iteracoes melhora a razao computacao/comunicacao; threads mantiveram ganho (1.25-1.73x), mas sockets ainda nao compensaram o custo de enviar blocos inteiros a cada passo.
 - Overheads principais: copia de blocos completos e sincronizacao por iteracao no master/worker; troca de contexto e limites de cache no multithreading; ausencia de afinidade/processos para fugir do GIL.
-- Limitacoes: apenas 1 execucao por combinacao (sem media/DP); hardware nao descrito; sem afinidade de CPU ou ajustes de buffer de rede.
+- Limitacoes: apenas 1 execucao por combinacao (sem media/DP); nao fixamos afinidade de CPU nem ajustes de buffer de rede; protocolo de sockets ainda envia blocos completos.
 - Possiveis melhorias: trocar protocolo para enviar so ghost rows entre vizinhos; evitar recopia do bloco inteiro; usar multiprocessing/Numba para aumentar computacao util; rodar varias repeticoes e medir dispersao; testar tamanhos ainda maiores para sockets.
 
 ## Conclusao

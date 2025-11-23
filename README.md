@@ -1,11 +1,24 @@
 ## Difusao de calor - sequencial, threads e sockets
 
-Projeto em Python 3 comparando tres abordagens para o problema classico de difusao de calor em uma placa 2D:
+Um passo a passo pratico para comparar, em Python 3, tres jeitos de resolver o classico problema de difusao de calor em uma placa 2D:
 - Sequencial
 - Paralela com threads (ThreadPoolExecutor)
 - Distribuida via sockets (master + workers)
 
-Cada abordagem usa o metodo de Jacobi com bordas fixas. Uma regiao quente opcional e aplicada no centro (por padrao, 10% do lado, valor 100).
+Cada abordagem usa o metodo de Jacobi com bordas fixas. Uma regiao quente opcional fica no centro (por padrao, 10% do lado, valor 100). A ideia e mostrar, lado a lado, o que muda em desempenho quando mudamos a forma de paralelizar.
+
+### Quem somos
+- Joao Pedro Madureira Sales (RA 2313065)
+- Matheus Victor Martins (RA 2325624)
+- Yuri Silvestre Admertides (RA 2144379)
+
+Disciplina e turma: EC48A - Sistemas Distribuidos - C81 (2025_02)
+
+### Maquina usada nos testes
+- CPU: Intel Core i7 (13a geracao)
+- GPU: NVIDIA GeForce RTX 4050
+- RAM: 16 GB
+- Sistema operacional: Windows 11
 
 ### Estrutura dos arquivos
 - `heat_diffusion_sequential.py`: implementacao sequencial com CLI.
@@ -74,20 +87,15 @@ Gera:
 - `tempo_vs_threads.png`
 - `tempo_vs_workers.png`
 
-### Infos da maquina (preencher)
-- CPU (modelo, nucleos/threads): TODO
-- Memoria RAM: TODO
-- Sistema operacional: TODO
-- Versao do Python: TODO
+### Passo a passo para replicar (5 minutos)
+1) Criar e ativar a venv, instalar deps (`numpy`, `matplotlib`).
+2) Rodar um teste rapido: `python heat_diffusion_sequential.py --nx 50 --ny 50 --iterations 50 --hot`.
+3) Rodar o benchmark completo: `python benchmark.py --hot` (gera `results.csv`).
+4) Gerar graficos: `python plot_results.py --input results.csv --out-dir .`.
+5) Preencher `analysis.md` com metodologia, resultados e conclusoes.
 
-Snippet para coletar infos rapidas:
-```python
-import platform, sys
-print(platform.platform())
-print(platform.processor())
-print("CPUs:", os.cpu_count())
-print("Python:", sys.version)
-```
-
-### Relatorio e analise
-Use `analysis.md` como esqueleto: descreva metodologia, resultados (referencie CSV e PNGs), discussao de escalabilidade, speedup/eficiencia, limites (sobrecarga de threads, custo de comunicacao dos sockets, sincronizacao) e melhorias futuras (melhor particionamento, multiprocessing, reducao de comunicacao, etc.).
+### Pronto para enviar ao professor
+- Entregar `results.csv`, `tempo_vs_tamanho.png`, `tempo_vs_threads.png`, `tempo_vs_workers.png`.
+- Confirmar que o README (este arquivo) traz specs da maquina e dados da equipe.
+- Deixar `analysis.md` preenchido com discussoes sobre escalabilidade, speedup e limites.
+- Opcional: anexar comandos usados e tempos obtidos para facilitar reproducao.
