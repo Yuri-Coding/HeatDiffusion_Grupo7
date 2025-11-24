@@ -17,8 +17,7 @@ from typing import Dict, List, Optional, Tuple
 
 from heat_diffusion_distributed_master import run_heat_diffusion_distributed_master
 from heat_diffusion_parallel import run_heat_diffusion_parallel
-from heat_diffusion_sequential import build_default_hot_region, run_heat_diffusion_sequential
-
+from heat_diffusion_sequential import build_central_hot_region, run_heat_diffusion_sequential
 
 def find_free_port() -> int:
     """
@@ -186,7 +185,7 @@ def main() -> None:
     # constroi regiao padrao apenas quando precisar em cada execucao para respeitar o tamanho.
     def compute_hot_region(nx: int, ny: int) -> Optional[Dict[str, float]]:
         if args.hot:
-            return build_default_hot_region(nx, ny, fraction=args.hot_fraction, value=args.hot_value)
+            return build_central_hot_region(nx, ny, fraction=args.hot_fraction, value=args.hot_value)
         return None
 
     results: List[Dict[str, str]] = []

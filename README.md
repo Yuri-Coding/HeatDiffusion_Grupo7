@@ -7,7 +7,7 @@ Um passo a passo pratico para comparar, em Python 3, tres jeitos de resolver o c
 
 Cada abordagem usa o metodo de Jacobi com bordas fixas. Uma regiao quente opcional fica no centro (por padrao, 10% do lado, valor 100). A ideia e mostrar, lado a lado, o que muda em desempenho quando mudamos a forma de paralelizar.
 
-### Quem somos
+### Alunos
 - Joao Pedro Madureira Sales (RA 2313065)
 - Matheus Victor Martins (RA 2325624)
 - Yuri Silvestre Admertides (RA 2144379)
@@ -68,7 +68,7 @@ O master envia uma mensagem `stop` no final; os workers encerram sozinhos.
 Observacao: para simplicidade, o master envia o bloco completo de cada worker a cada iteracao (protocolo didatico, com overhead de comunicacao maior).
 
 ### Benchmark padrao
-Executa tamanhos 50x50, 100x100 e 200x200 com 100 iteracoes, threads 1/2/4 e workers 1/2/4. Gera `results.csv`.
+Executa tamanhos 50x50, 100x100 e 200x200 com 100 iteracoes, threads 1/2/4 e workers 1/2. Gera `results.csv`.
 ```bash
 python benchmark.py --hot
 ```

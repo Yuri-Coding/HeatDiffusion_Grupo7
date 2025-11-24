@@ -16,7 +16,8 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
-from heat_diffusion_sequential import build_default_hot_region, create_initial_grid
+# Importa helpers renomeados da versao sequencial.
+from heat_diffusion_sequential import build_central_hot_region, initialize_grid
 
 
 def send_msg(conn: socket.socket, payload: Dict) -> None:
@@ -147,8 +148,8 @@ def run_heat_diffusion_distributed_master(
     if nx < 3 or ny < 3:
         raise ValueError("nx e ny devem ser pelo menos 3 para executar a versao distribuida.")
 
-    grid = create_initial_grid(nx, ny, initial_hot_region)
-    new_grid = grid.copy()
+    temperature_grid = initialize_grid(nx, ny, initial_hot_region)
+    next_grid = temperature_grid.copy()
 
     # Interior exclui bordas.
     interior_start = 1
@@ -165,29 +166,31 @@ def run_heat_diffusion_distributed_master(
     start_time = time.perf_counter()
     if nx >= 3 and ny >= 3:
         for iteration in range(n_iterations):
-            new_grid[...] = grid  # Preserva bordas.
+            # Preserva as bordas copiando o buffer anterior.
+            next_grid[...] = temperature_grid
 
-            # Envia fatias para cada worker com linhas fantasma.
-            # Protocolo simples: envia o bloco completo de cada worker a cada iteracao (overhead de comunicacao maior).
+            # Envia fatias para cada worker com linhas "fantasma" (top/bottom).
+            # Nota: protocolo envia o bloco completo do worker a cada iteracao.
             for conn, (row_start, row_end) in zip(connections, line_ranges):
-                chunk = grid[row_start : row_end + 1, :]
-                top = grid[row_start - 1, :]
-                bottom = grid[row_end + 1, :]
+                chunk = temperature_grid[row_start : row_end + 1, :]
+                top = temperature_grid[row_start - 1, :]
+                bottom = temperature_grid[row_end + 1, :]
                 _send_iteration_data(conn, iteration, chunk, top, bottom)
 
-            # Coleta resultados e escreve no novo grid.
+            # Coleta resultados e escreve no buffer next_grid.
             for conn, (row_start, row_end) in zip(connections, line_ranges):
                 msg = _recv_result(conn)
                 if msg.get("type") != "result" or msg.get("iter") != iteration:
                     raise RuntimeError(f"Mensagem inesperada do worker: {msg}")
                 updated_chunk = np.asarray(msg["chunk"], dtype=np.float64)
-                new_grid[row_start : row_end + 1, :] = updated_chunk
+                next_grid[row_start : row_end + 1, :] = updated_chunk
 
-            grid, new_grid = new_grid, grid
+            # Troca buffers.
+            temperature_grid, next_grid = next_grid, temperature_grid
 
     runtime = time.perf_counter() - start_time
 
-    # Encerra workers.
+    # Encerra workers (envia 'stop' e fecha conexoes).
     for conn in connections:
         try:
             send_msg(conn, {"type": "stop"})
@@ -195,7 +198,7 @@ def run_heat_diffusion_distributed_master(
             pass
         conn.close()
 
-    return runtime, grid
+    return runtime, temperature_grid
 
 
 def parse_args() -> argparse.Namespace:
@@ -220,7 +223,7 @@ def main() -> None:
     args = parse_args()
     hot_region = None
     if args.hot:
-        hot_region = build_default_hot_region(args.nx, args.ny, fraction=args.hot_fraction, value=args.hot_value)
+        hot_region = build_central_hot_region(args.nx, args.ny, fraction=args.hot_fraction, value=args.hot_value)
 
     print(f"Aguardando {args.workers} workers em {args.host}:{args.port} ...")
     runtime, final_grid = run_heat_diffusion_distributed_master(

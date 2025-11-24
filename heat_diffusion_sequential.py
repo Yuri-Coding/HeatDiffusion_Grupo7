@@ -35,7 +35,7 @@ def apply_hot_region(grid: np.ndarray, region: Dict[str, float]) -> None:
     grid[x_start : x_end + 1, y_start : y_end + 1] = value
 
 
-def build_default_hot_region(nx: int, ny: int, fraction: float = 0.1, value: float = 100.0) -> Dict[str, float]:
+def build_central_hot_region(nx: int, ny: int, fraction: float = 0.1, value: float = 100.0) -> Dict[str, float]:
     """
     Constroi uma regiao quente quadrada centralizada.
 
@@ -54,14 +54,14 @@ def build_default_hot_region(nx: int, ny: int, fraction: float = 0.1, value: flo
     }
 
 
-def create_initial_grid(nx: int, ny: int, initial_hot_region: Optional[Dict[str, float]] = None) -> np.ndarray:
+def initialize_grid(nx: int, ny: int, initial_hot_region: Optional[Dict[str, float]] = None) -> np.ndarray:
     """
     Cria o grid inicial com bordas fixas e opcional regiao quente interna.
     """
-    grid = np.zeros((nx, ny), dtype=np.float64)
+    temperature_grid = np.zeros((nx, ny), dtype=np.float64)
     if initial_hot_region:
-        apply_hot_region(grid, initial_hot_region)
-    return grid
+        apply_hot_region(temperature_grid, initial_hot_region)
+    return temperature_grid
 
 
 def run_heat_diffusion_sequential(
@@ -73,20 +73,21 @@ def run_heat_diffusion_sequential(
     Retorna:
         tempo_de_execucao (segundos), matriz_final (numpy.ndarray)
     """
-    grid = create_initial_grid(nx, ny, initial_hot_region)
-    new_grid = grid.copy()
+    temperature_grid = initialize_grid(nx, ny, initial_hot_region)
+    next_grid = temperature_grid.copy()
 
-    start = time.perf_counter()
+    t_start = time.perf_counter()
     if nx >= 3 and ny >= 3:
         for _ in range(n_iterations):
-            # Mantem as bordas fixas copiando os valores anteriores.
-            new_grid[...] = grid
-            new_grid[1:-1, 1:-1] = 0.25 * (
-                grid[:-2, 1:-1] + grid[2:, 1:-1] + grid[1:-1, :-2] + grid[1:-1, 2:]
+            # Mantem as bordas fixas copiando os valores anteriores para next_grid.
+            next_grid[...] = temperature_grid
+            next_grid[1:-1, 1:-1] = 0.25 * (
+                temperature_grid[:-2, 1:-1] + temperature_grid[2:, 1:-1] + temperature_grid[1:-1, :-2] + temperature_grid[1:-1, 2:]
             )
-            grid, new_grid = new_grid, grid
-    runtime = time.perf_counter() - start
-    return runtime, grid
+            # Troca os buffers (sem copiar dados).
+            temperature_grid, next_grid = next_grid, temperature_grid
+    runtime = time.perf_counter() - t_start
+    return runtime, temperature_grid
 
 
 def parse_args() -> argparse.Namespace:
@@ -108,7 +109,7 @@ def main() -> None:
     args = parse_args()
     hot_region = None
     if args.hot:
-        hot_region = build_default_hot_region(args.nx, args.ny, fraction=args.hot_fraction, value=args.hot_value)
+        hot_region = build_central_hot_region(args.nx, args.ny, fraction=args.hot_fraction, value=args.hot_value)
 
     runtime, final_grid = run_heat_diffusion_sequential(args.nx, args.ny, args.iterations, hot_region)
     print(f"Tempo de execucao (sequencial): {runtime:.4f} s")

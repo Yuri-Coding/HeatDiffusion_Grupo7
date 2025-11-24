@@ -16,7 +16,8 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
-from heat_diffusion_sequential import build_default_hot_region, create_initial_grid
+# Importa os helpers renomeados da versao sequencial.
+from heat_diffusion_sequential import build_central_hot_region, initialize_grid
 
 
 def split_ranges(start: int, end: int, n_parts: int) -> List[Tuple[int, int]]:
@@ -52,6 +53,7 @@ def _update_chunk(
         col_end = current.shape[1] - 2
     if row_start > row_end or col_start > col_end:
         return
+    # Formula de Jacobi aplicada ao sub-bloco.
     output[row_start : row_end + 1, col_start : col_end + 1] = 0.25 * (
         current[row_start - 1 : row_end, col_start : col_end + 1]
         + current[row_start + 1 : row_end + 2, col_start : col_end + 1]
@@ -73,8 +75,8 @@ def run_heat_diffusion_parallel(
     Retorna:
         tempo_de_execucao (segundos), matriz_final (numpy.ndarray)
     """
-    grid = create_initial_grid(nx, ny, initial_hot_region)
-    new_grid = grid.copy()
+    temperature_grid = initialize_grid(nx, ny, initial_hot_region)
+    next_grid = temperature_grid.copy()
 
     # Linhas internas que serao divididas entre as threads (exclui bordas).
     interior_start = 1
@@ -85,14 +87,17 @@ def run_heat_diffusion_parallel(
     if nx >= 3 and ny >= 3:
         with ThreadPoolExecutor(max_workers=max(1, n_threads)) as executor:
             for _ in range(n_iterations):
-                new_grid[...] = grid  # Mantem bordas fixas.
+                # Mantem as bordas fixas.
+                next_grid[...] = temperature_grid
+                # Dispara tarefas para cada fatia de linhas.
                 futures = [
-                    executor.submit(_update_chunk, grid, new_grid, r_start, r_end) for (r_start, r_end) in line_ranges
+                    executor.submit(_update_chunk, temperature_grid, next_grid, r_start, r_end) for (r_start, r_end) in line_ranges
                 ]
                 wait(futures)
-                grid, new_grid = new_grid, grid
+                # Troca os buffers.
+                temperature_grid, next_grid = next_grid, temperature_grid
     runtime = time.perf_counter() - start_time
-    return runtime, grid
+    return runtime, temperature_grid
 
 
 def parse_args() -> argparse.Namespace:
@@ -115,7 +120,7 @@ def main() -> None:
     args = parse_args()
     hot_region = None
     if args.hot:
-        hot_region = build_default_hot_region(args.nx, args.ny, fraction=args.hot_fraction, value=args.hot_value)
+        hot_region = build_central_hot_region(args.nx, args.ny, fraction=args.hot_fraction, value=args.hot_value)
 
     runtime, final_grid = run_heat_diffusion_parallel(
         args.nx, args.ny, args.iterations, args.threads, initial_hot_region=hot_region
